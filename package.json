@@ -1,0 +1,31 @@
+{
+  "name": "tesla-inventory-crawler",
+  "version": "1.0.0",
+  "description": "tool to check for new tesla inventory",
+  "main": "main.js",
+  "dependencies": {
+    "crawler": "^1.3.0",
+    "twilio": "^3.67.2",
+    "typescript": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/crawler": "^1.2.2",
+    "@types/node": "^16.9.1",
+    "@types/twilio": "^3.19.3"
+  },
+  "scripts": {
+    "build": "tsc main.ts",
+    "start": "tsc main.ts && node main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tbhanson96/tesla-inventory-crawler.git"
+  },
+  "author": "tbhanson96",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tbhanson96/tesla-inventory-crawler/issues"
+  },
+  "homepage": "https://github.com/tbhanson96/tesla-inventory-crawler#readme"
+}
