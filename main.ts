@@ -26,13 +26,17 @@ function scan()
         loadWebpage(webpage).then(result => {
             if (!!result && result != lastResult)
             {
-                sendMessage("Found new inventory: " + result);
+                sendMessage("Found new inventory: " + result + "link: " + webpage);
                 console.log("found new inventory: " + result);
                 lastResult = result;
             }
+            else if (!result)
+            {
+                console.log("no inventory found :(");
+            }
             else
             {
-               console.log("no no inventory :(");
+                console.log("Inventory still available!!");
             }
         });
     }, 5000);
@@ -63,7 +67,7 @@ async function loadWebpage(uri: string): Promise<string>
         {
 
             const text = await page.evaluate(e => e.textContent, sub);
-            if (text?.toString()?.includes('Blue'))
+            if (text?.toString()?.includes(process.env.TESLA_COLOR))
             {
                 const priceElem = await e.$('.result-purchase-price');
                 var price = await page.evaluate(e => e.textContent, priceElem);
