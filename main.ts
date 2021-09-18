@@ -1,63 +1,101 @@
+import { Browser } from 'puppeteer';
 import * as twilio from 'twilio';
-import * as puppeteer from 'puppeteer';
+const puppeteer = require('puppeteer');
 
 
-async function scan()
+let client: twilio.Twilio;
+try
+{
+    const accountSid = process.env.TWILIO_ACCOUNT_SID;
+    const authToken = process.env.TWILIO_AUTH_TOKEN;
+    // require the Twilio module and create a REST client
+    // const client = require('twilio')(accountSid, authToken);
+    client = (<any>twilio)(accountSid, authToken);
+}
+catch(e)
+{
+    console.error('Failed to initialized twilio client');
+}
+
+function scan()
 {
  
-    setInterval(async () => {
-        var result = await loadWebpage('https://www.tesla.com/inventory/new/my?arrangeby=plh&zip=92109&range=200');
-        if (result)
-        {
-            sendMessage("Found new inventory: " + result);
-        }
-    }, 1000);
+    let lastResult = '';
+    const webpage = process.env.TESLA_URL || 'www.google.com';// lol
+    setInterval(() => {
+        loadWebpage(webpage).then(result => {
+            if (!!result && result != lastResult)
+            {
+                sendMessage("Found new inventory: " + result);
+                console.log("found new inventory: " + result);
+                lastResult = result;
+            }
+            else
+            {
+               console.log("no no inventory :(");
+            }
+        });
+    }, 5000);
 }
 scan();
 
 async function loadWebpage(uri: string): Promise<string>
 {
-    const browser = await puppeteer.launch();
+    const browser: Browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto(uri);
 
-    let result = '';
-    await page.waitForSelector('.result-purchase-price', { timeout: 2000 });
-    const query = await page.$('.result-purchase-price');
-    if (!!query)
+    let result: string[] = [];
+    try
     {
-        result = await page.evaluate(el => el.textContent, query);
+        await page.waitForSelector('.result, .card', { timeout: 2000 });
+    }
+    catch (e)
+    {
+        // do nothing
+    }
+
+    let elements = await page.$$('.result, .card');
+    for(const e of elements)
+    {
+        var subElems = await e.$$('.tds-list-item');
+        for (const sub of subElems)
+        {
+
+            const text = await page.evaluate(e => e.textContent, sub);
+            if (text?.toString()?.includes('Blue'))
+            {
+                const priceElem = await e.$('.result-purchase-price');
+                var price = await page.evaluate(e => e.textContent, priceElem);
+                result.push(price);
+            }
+        }
     }
 
     await browser.close();
-    return result;
+    return result.join(', ');
 }
 
 async function sendMessage(message: string)
 {
     // Twilio Credentials
     // To set up environmental variables, see http://twil.io/secure
-    const accountSid = process.env.TWILIO_ACCOUNT_SID;
-    const authToken = process.env.TWILIO_AUTH_TOKEN;
     const recipient = process.env.TWILIO_RECIPIENT;
     const sender = process.env.TWILIO_SENDER;
 
-    // require the Twilio module and create a REST client
-    // const client = require('twilio')(accountSid, authToken);
-    const client = (<any>twilio)(accountSid, authToken);
 
     try
     {
-        await client.messages
+        await client?.messages
         .create({
             to: recipient ?? '',
             from: sender ?? '',
             body: message,
         });
+        console.log('Successfully sent message!');
     }
     catch(err: any)
     {
-        console.error('Failed to send message: ' + err);
+        console.error('Failed to send message: ' + message);
     }
-    console.log('Successfully sent message!');
 }
